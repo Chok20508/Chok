@@ -1,0 +1,54 @@
+import discord
+from discord.ext import commands
+
+TOKEN = "MTM5MzU3OTY0NDYxNTEzMTE3Nw.GCAxSM.rW-ce7PBjXl2Y_FjEpWqqSonpzjf1VJv-M2Zic"  # <<< ตรงนี้ใส่โทเคนที่ได้จาก Developer Portal
+GUILD_ID = 1393579644615131177      # <<< ใส่ Server ID (ดูวิธีด้านล่าง)
+ROLE_NAME = "Chok"       # <<< ใส่ชื่อ Role ที่จะมอบ
+
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+def is_stickied_format(content):
+    return (
+        "__**Stickied Message:**__" in content and
+        "[ Roblox ]" in content and
+        "[ Discord ]" in content and
+        "[ รู้จักแมพนี้จากไหน ]" in content and
+        "[ รูปหลักฐานการเข้ากลุ่ม ]" in content
+    )
+
+@bot.event
+async def on_ready():
+    print(f"✅ บอททำงานแล้วในชื่อ {bot.user}")
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    if is_stickied_format(message.content):
+        guild = discord.utils.get(bot.guilds, id=GUILD_ID)
+        member = guild.get_member(message.author.id)
+
+        if not member:
+            print("❌ ไม่พบสมาชิกในเซิร์ฟเวอร์")
+            return
+
+        role = discord.utils.get(guild.roles, name=ROLE_NAME)
+        if not role:
+            await message.channel.send(f"❌ ไม่พบ Role ชื่อ '{ROLE_NAME}'")
+            return
+
+        try:
+            await member.add_roles(role)
+            await message.reply("✅ ยืนยันตัวเสร็จแล้ว และได้รับบทบาทเรียบร้อยครับ!")
+        except Exception as e:
+            print("❌ เกิดข้อผิดพลาด:", e)
+            await message.reply("❌ ไม่สามารถให้บทบาทได้")
+
+    await bot.process_commands(message)
+
+bot.run(TOKEN)
