@@ -1,0 +1,61 @@
+import discord
+from discord.ext import commands
+
+# ======== 🔧 ตั้งค่าเบื้องต้น ========
+TOKEN = "ใส่โทเคนของคุณที่นี่"  # 👉 กรอก Token จาก Discord Developer Portal
+GUILD_ID = 123456789012345678      # 👉 กรอก Server ID ของดิสคอร์ดคุณ
+ROLE_NAME = "ผ่านการยืนยัน"       # 👉 ชื่อ Role ที่จะให้ เช่น "ผ่านการยืนยัน"
+
+# ======== ⚙️ กำหนด Intent ========
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
+
+# ======== 🤖 สร้าง Bot ========
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# ======== 🧠 ฟังก์ชันเช็กข้อความตามฟอร์ม ========
+def is_stickied_format(content):
+    return (
+        "__**Stickied Message:**__" in content and
+        "[ Roblox ]" in content and
+        "[ Discord ]" in content and
+        "[ รู้จักแมพนี้จากไหน ]" in content and
+        "[ รูปหลักฐานการเข้ากลุ่ม ]" in content
+    )
+
+# ======== ✅ บอทออนไลน์แล้ว ========
+@bot.event
+async def on_ready():
+    print(f"✅ บอทออนไลน์แล้วในชื่อ: {bot.user}")
+
+# ======== 📥 ตรวจจับข้อความ ========
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    if is_stickied_format(message.content):
+        guild = discord.utils.get(bot.guilds, id=GUILD_ID)
+        member = guild.get_member(message.author.id)
+
+        if not member:
+            print("❌ ไม่พบสมาชิกในเซิร์ฟเวอร์")
+            return
+
+        role = discord.utils.get(guild.roles, name=ROLE_NAME)
+        if not role:
+            await message.channel.send(f"❌ ไม่พบ Role ชื่อ '{ROLE_NAME}'")
+            return
+
+        try:
+            await member.add_roles(role)
+            await message.reply("✅ ยืนยันตัวเสร็จแล้ว และได้รับบทบาทเรียบร้อยครับ!")
+        except Exception as e:
+            print("❌ เกิดข้อผิดพลาด:", e)
+            await message.reply("❌ ไม่สามารถให้บทบาทได้")
+
+    await bot.process_commands(message)
+
+# ======== ▶️ เริ่มรันบอท ========
+bot.run(TOKEN)
